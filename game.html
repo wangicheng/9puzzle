@@ -1,0 +1,444 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width">
+        <title>21003王藝誠</title>
+        <style>
+            #game{
+                width: 402px;
+                position: absolute;
+                top: 50px;
+                left: 350px;
+                border-radius: 5px;
+            }
+            #valueL{
+                position: absolute;
+                top: 5px;
+                left: 5px;
+            }
+            #valueC{
+                position: absolute;
+                top: 5px;
+                right: 5px;
+            }
+            #progressBar1{
+				width: 402px;
+				height: 10px;
+                border-radius: 5px;
+                position: absolute;
+                top: 100px;
+                left: 0px;
+            }
+            #progressBar2{
+				width: 0px;
+				height: 8px;
+                border-radius: 4px;
+                position: absolute;
+                top: 101px;
+                left: 1px;
+            }
+            #size{
+				display: inline-block;
+                font-family: verdana;
+                position: absolute;
+                top: 30px;
+                left: 20px;
+            }
+            #timenun{
+				display: inline-block;
+                font-family: verdana;
+                position: absolute;
+                top: 30px;
+                left: 110px;
+            }
+            #besttimenun{
+				display: inline-block;
+                font-family: verdana;
+                position: absolute;
+                top: 30px;
+                left: 260px;
+            }
+            #board{
+				width: 400px;
+				height: 400px;
+                padding: 1px;
+                position: absolute;
+                top: 120px;
+                left: 0px;
+                border-radius: 5px;
+            }
+            .block{
+				width: 50px;
+				height: 50px;
+                margin: 2px;
+				display: inline-block;
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                font-family: verdana;
+                font-size: 30px;
+                font-style: bold;
+                text-align: center;
+                user-select: none;
+                border-radius: 5px;
+                align-items: center;
+            }
+
+            @font-face {
+                font-family: 'ProggyClean';
+                src: url('ProggyClean.ttf') format("truetype");
+            }
+
+            
+        </style>
+        <script>
+            function get(ID){
+                return document.getElementById(ID);
+            }
+            
+            function ran(min, max){
+                return Math.floor(Math.random() * (max-min+1)) + min;
+            }
+
+            
+            var timer = 0;
+            var L = 4;
+            var gameArray = [];
+            var best_time = {};
+            var t1 = 0;
+            var gameStatus = "setting";
+            var theme = 3;
+            setInterval(slideProgress, 10);
+            setInterval(setGamePosition, 10);
+
+            function setGamePosition(){
+                get("game").style.left = document.body.clientWidth/2 - 201 + "px";
+            }
+            
+            function ranArray(){
+                gameArray = [];
+                for(var i=1; i<=L*L; i++){
+                    gameArray.push(i);
+                }
+                for(var i=0; i<1000; i++){
+                    moveBlock(ran(1, 4), false);
+                }
+            }
+            function createBlocks(){
+                var board = get("board");
+                for(var pos=0; pos<L*L; pos++){
+                    var div = document.createElement("div");
+                    div.className = "block clr2 clr3";
+                    div.id = "block_" + gameArray[pos];
+                    div.innerHTML = gameArray[pos];
+                    if (gameArray[pos]==L*L){
+                        div.innerHTML = "▶";
+                        div.addEventListener("click", clickBlock, false);
+                    }
+                    var len = 400 / L - 4;
+                    div.style.height = len+2 + "px";
+                    div.style.width = len+2 + "px";
+                    putBlock(div, pos);
+                    board.appendChild(div);
+                    div.addEventListener("mouseover", mouseoverBlock, false);
+
+                    appear(div);
+                }
+            }
+            function appear(div){
+                div.style.borderRadius = "50%";
+                var r = ran(0, 4);
+                for(var i=0; i<100; i++){
+                    setTimeout(appearing, r*30 + i*10, div);
+                }
+            }
+            function appearing(div){
+                var a = parseFloat(div.style.borderRadius);
+                div.style.borderRadius = (a-10)*0.9 + 10 + "%";
+            }
+            function mouseoverBlock(e){
+                p1 = gameArray.indexOf(L*L);
+                p2 = gameArray.indexOf(parseInt(e.target.id.substring(6)));
+                switch(p1-p2){
+                    case L:
+                        moveBlock(1);
+                        break;
+                    case -1:
+                        moveBlock(2);
+                        break;
+                    case -L:
+                        moveBlock(3);
+                        break;
+                    case 1:
+                        moveBlock(4);
+                        break;
+                }
+            }
+            function clickBlock(e){
+                if (parseInt(e.target.id.substring(6)) != L*L){
+                    return;
+                }
+                if (gameStatus == "ready"){
+                    gameStatus = "is_ready";
+                    get("block_" + L*L).style.display = "none";
+                }
+                if (gameStatus == "setting"){
+                    gameReady();
+                }
+            }
+
+            function putBlock(div, pos){
+                div.style.top = Math.floor(pos/L) * 400 / L + "px";
+                div.style.left = pos%L * 400 / L + "px";
+            }
+
+            function isClose(p1, p2){
+                if (p1<0 || p2<0 || p1>=L*L || p2>=L*L){
+                    return false;
+                }
+                if (Math.abs(p1-p2) == L){
+                    return true;
+                }
+                if (Math.abs(p1-p2) != 1){
+                    return false;
+                }
+                if (Math.floor(p1/L) == Math.floor(p2/L)){
+                    return true;
+                }
+                return false;
+            }
+            
+            document.onkeydown = function(e){
+                switch(e.keyCode){
+                    case 38:
+                        moveBlock(1, 1, 1);
+                        break;
+                    case 39:
+                        moveBlock(2, 1, 1);
+                        break;
+                    case 40:
+                        moveBlock(3, 1, 1);
+                        break;
+                    case 37:
+                        moveBlock(4, 1, 1);
+                        break;
+                }
+            }
+
+            function moveBlock(dir, a=true, b=false){
+                if (b && gameStatus == "ready"){
+                    gameStatus = "is_ready";
+                    get("block_" + L*L).style.display = "none";
+                }
+                if (gameStatus == "is_ready" && a){
+                    gameStart();
+                }
+                if (gameStatus != "playing" && a){
+                    return 0;
+                }
+                var p1 = gameArray.indexOf(L*L);
+                var p2 = 0;
+                switch(dir){
+                    case 1:
+                        p2 = p1 - L;
+                        break;
+                    case 2:
+                        p2 = p1 + 1;
+                        break;
+                    case 3:
+                        p2 = p1 + L;
+                        break;
+                    case 4:
+                        p2 = p1 - 1;
+                        break;
+                }
+                if (!isClose(p1, p2)){
+                    return 0;
+                }
+                if (a){
+                    div = get("block_" + gameArray[p2]);
+                    slideBlock(div, dir);
+                    putBlock(get("block_"+L*L), p2);
+                }
+            
+                var t = gameArray[p1];
+                gameArray[p1] = gameArray[p2];
+                gameArray[p2] = t;
+                return 0;
+            }
+            function slideBlock(div, dir){
+                for(var i=0; i<8; i++){
+                    setTimeout(slide, i*8, div, dir, 400/L/8)
+                }
+            }
+            function slide(div, dir, d){
+                switch(dir){
+                    case 1:
+                        div.style.top = parseFloat(div.style.top)+d + "px";
+                        break;
+                    case 2:
+                        div.style.left = parseFloat(div.style.left)-d + "px";
+                        break;
+                    case 3:
+                        div.style.top = parseFloat(div.style.top)-d + "px";
+                        break;
+                    case 4:
+                        div.style.left = parseFloat(div.style.left)+d + "px";
+                        break;
+                }
+            }
+            function slideProgress(){
+                var count = 0;
+                for(var i=0; i<L*L; i++){
+                    if (i+1 == gameArray[i]){
+                        count++;
+                    }
+                }
+                
+                var pro = get("progressBar2");
+                var oldW = parseFloat(pro.style.width);
+                var newW = count*400/L/L;
+                if (isNaN(oldW)){
+                    oldW = 0;
+                }
+                if (Math.abs(newW - oldW) < 1){
+                    pro.style.width = newW + "px";
+                }
+                else{
+                    pro.style.width = (newW + oldW*4)/5 + "px";
+                }
+                /*
+                var o = parseFloat(pro.style.width) / 400 * 120;
+                pro.style.backgroundColor = `hsl(${o}, 80%, 70%)`;
+                */
+                if (gameStatus == "playing" && count == L*L){
+                    gameStop();
+                    gameOver();
+                }
+            }
+            
+            function gameReady(){
+                clearBlocks();
+                ranArray();
+                createBlocks();
+                changeTheme(theme);
+                timer = 0;
+                gameStatus = "ready";
+            }
+            function clearBlocks(){
+                var board = get("board");
+                while(board.childNodes.length > 0){
+                    board.childNodes[0].remove();
+                }
+            }
+            
+            function gameStart(){
+                gameStatus = "playing";
+                timer = 0;
+                t1 = setInterval(gameTimer, 100);
+            }
+            function gameTimer(){
+                timer += 0.1;
+                get("timenun").innerHTML = "time : " + Math.floor(timer*10)/10 + " sec";
+            }
+            function gameStop(){
+                gameStatus = "setting";
+                clearInterval(t1);
+            }
+            function gameOver(){
+                var bt = best_time[L.toString()];
+                if (isNaN(bt) || bt > timer){
+                    best_time[L.toString()] = Math.floor(timer*10)/10;
+                    refreshBesttime()
+                }
+                var div = get("block_" + L*L);
+                appear(div);
+                div.innerHTML = "⟳";
+                div.style.display = "inline";
+            }
+            function refreshBesttime(){
+                var bt = best_time[L.toString()];
+                if (isNaN(bt)){
+                    get("besttimenun").innerHTML = "best : ";
+                }
+                else{
+                    get("besttimenun").innerHTML = "best : " + bt + " sec";
+                }
+            }
+
+            function setL(){
+                var valueL = get("valueL");
+                L = parseInt(valueL.value);
+                gameStop();
+                get("size").innerHTML = L + " × " + L;
+                get("timenun").innerHTML = "time : 0 sec";
+                refreshBesttime();
+                gameStatus = "setting";
+                gameReady();
+            }
+            
+            function setC(){
+                var valueC = get("valueC");
+                changeTheme(parseInt(valueC.value));                
+            }
+
+            function changeTheme(n){
+                theme = n;
+                switch(n){
+                    case 1:
+                        changeColors("#FFFFFF", "#E0E0E0", "#ABCDEF", "#000000");
+                        return 0;
+                    case 2:
+                        changeColors("#C6A490", "#5A3A26", "#6486AD", "#C6A490");
+                        return 0;
+                    case 3:
+                        changeColors("#442327", "#C0BC98", "#A6885D", "#442327");
+                        return 0;
+                    case 4:
+                        changeColors("#586180", "#E6E1CE", "#E2AC29", "#586180");
+                        return 0;
+                    case 5:
+                        changeColors("#212223", "#325077", "#3D85E0", "#FFFFFF");
+                        return 0;
+                }
+            }
+            function changeColors(clr0, clr1, clr2, clr3){
+                var d = document.getElementsByClassName("clr0");
+                for(var i=0; i<d.length; i++){
+                    d[i].style.background = clr0;
+                }
+                var d = document.getElementsByClassName("clr1");
+                for(var i=0; i<d.length; i++){
+                    d[i].style.background = clr1;
+                }
+                var d = document.getElementsByClassName("clr2");
+                for(var i=0; i<d.length; i++){
+                    d[i].style.background = clr2;
+                }
+                var d = document.getElementsByClassName("clr3");
+                for(var i=0; i<d.length; i++){
+                    d[i].style.color = clr3;
+                }
+                return 0;
+            }
+            
+
+            
+        </script>
+    </head>
+    <body onload="gameReady();" class="clr0">
+        <div id="game" class="clr1">
+            <input type="range" id="valueL" oninput="setL();" min=2 max=10 value=4><br>
+            <input type="range" id="valueC" oninput="setC();" min=1 max=5 value=3><br>
+            <div id="size" class="clr3">4 × 4</div>
+            <div id="timenun" class="clr3">time : 0 sec</div>
+            <div id="besttimenun" class="clr3">best : </div>
+            <br>
+            <div id="progressBar1" class="clr1"></div>
+            <div id="progressBar2" class="clr2"></div>
+            <br>
+            <div id="board" class="clr1"></div>
+        </div>
+        
+    </body>
+</html>
